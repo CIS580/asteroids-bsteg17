@@ -3,11 +3,20 @@
 /* Classes */
 const Game = require('./game.js');
 const Player = require('./player.js');
+const Asteroid = require('./asteroid.js');
 
 /* Global variables */
 var canvas = document.getElementById('screen');
 var game = new Game(canvas, update, render);
-var player = new Player({x: canvas.width/2, y: canvas.height/2}, canvas);
+var player; 
+var asteroids = [];
+var level = 0;
+
+var levelInit = function(level) {
+  player = new Player({x: canvas.width/2, y: canvas.height/2}, canvas);
+  asteroids = Asteroid.initAsteroids(10 + (level * 2), canvas);
+  console.log(asteroids);
+}
 
 /**
  * @function masterLoop
@@ -18,8 +27,8 @@ var masterLoop = function(timestamp) {
   game.loop(timestamp);
   window.requestAnimationFrame(masterLoop);
 }
+levelInit(level);
 masterLoop(performance.now());
-
 
 /**
  * @function update
@@ -31,7 +40,7 @@ masterLoop(performance.now());
  */
 function update(elapsedTime) {
   player.update(elapsedTime);
-  // TODO: Update the game objects
+  asteroids.forEach(function(asteroid){asteroid.update(elapsedTime)});
 }
 
 /**
@@ -45,4 +54,5 @@ function render(elapsedTime, ctx) {
   ctx.fillStyle = "black";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   player.render(elapsedTime, ctx);
+  asteroids.forEach(function(asteroid){asteroid.render(elapsedTime, ctx)});
 }
