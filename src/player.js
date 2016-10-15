@@ -1,5 +1,7 @@
 "use strict";
 
+const Laser = require('./laser.js');
+
 const MS_PER_FRAME = 1000/8;
 
 /**
@@ -13,6 +15,7 @@ module.exports = exports = Player;
  * @param {Postition} position object specifying an x and y
  */
 function Player(position, canvas) {
+  this.canvas = canvas;
   this.worldWidth = canvas.width;
   this.worldHeight = canvas.height;
   this.state = "idle";
@@ -30,6 +33,8 @@ function Player(position, canvas) {
   this.steerLeft = false;
   this.steerRight = false;
 
+  this.lasers = [];
+
   var self = this;
   window.onkeydown = function(event) {
     switch(event.key) {
@@ -45,6 +50,9 @@ function Player(position, canvas) {
       case 'd':
         self.steerRight = true;
         break;
+      case ' ':
+	self.shootLaser();
+	break;
     }
   }
 
@@ -66,7 +74,10 @@ function Player(position, canvas) {
   }
 }
 
-
+Player.prototype.shootLaser = function() {
+  console.log("pew");
+  this.lasers.push(new Laser(this, this.canvas)); 
+}
 
 /**
  * @function updates the player object

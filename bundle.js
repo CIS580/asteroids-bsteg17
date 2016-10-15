@@ -16,7 +16,6 @@ var level = 0;
 var levelInit = function(level) {
   player = new Player({x: canvas.width/2, y: canvas.height/2}, canvas);
   asteroids = Asteroid.initAsteroids(10 + (level * 2), canvas);
-  console.log(asteroids);
 }
 
 /**
@@ -41,6 +40,7 @@ masterLoop(performance.now());
  */
 function update(elapsedTime) {
   player.update(elapsedTime);
+  player.lasers.forEach(function(laser){laser.update(elapsedTime)});
   asteroids.forEach(function(asteroid){asteroid.update(elapsedTime)});
 }
 
@@ -55,10 +55,12 @@ function render(elapsedTime, ctx) {
   ctx.fillStyle = "black";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   player.render(elapsedTime, ctx);
+  console.log(player.lasers);
+  player.lasers.forEach(function(laser){laser.render(ctx)});
   asteroids.forEach(function(asteroid){asteroid.render(elapsedTime, ctx)});
 }
 
-},{"./asteroid.js":2,"./game.js":3,"./player.js":5}],2:[function(require,module,exports){
+},{"./asteroid.js":2,"./game.js":3,"./player.js":6}],2:[function(require,module,exports){
 "use strict";
 
 var Helpers = require('./helpers.js');
@@ -213,6 +215,73 @@ Helpers.randomPosition = function(canvas) {
 const MS_PER_FRAME = 1000/8;
 
 /**
+ * @module exports the Laser class
+ */
+module.exports = exports = Laser;
+
+/**
+ * @constructor Laser
+ * Creates a new player object
+ * @param {Postition} position object specifying an x and y
+ */
+function Laser(player, canvas) {
+  this.player = player;
+  this.worldWidth = canvas.width;
+  this.worldHeight = canvas.height;
+  this.angle = player.angle;
+  this.position = {
+    x: player.position.x - Math.sin(this.angle) * 10,
+    y: player.position.y - Math.cos(this.angle) * 10
+  };
+  this.speed = 5;
+  this.velocity = {
+    x: -(Math.sin(this.angle) * this.speed),
+    y: -(Math.cos(this.angle) * this.speed)
+  };
+  this.width = 3;
+  this.height = 10;
+}
+
+/**
+ * @function updates the player object
+ * {DOMHighResTimeStamp} time the elapsed time since the last frame
+ */
+Laser.prototype.update = function(time) {
+  // Apply velocity
+  this.position.x += this.velocity.x;
+  this.position.y += this.velocity.y;
+  if(this.position.x < 0 ||
+    this.position.x > this.worldWidth ||
+    this.position.y < 0 ||
+    this.position.y > this.worldHeight) {
+      this.player.lasers.splice(this.player.lasers.indexOf(this), 1);
+  }
+}
+
+/**
+ * @function renders the player into the provided context
+ * {DOMHighResTimeStamp} time the elapsed time since the last frame
+ * {CanvasRenderingContext2D} ctx the context to render into
+ */
+Laser.prototype.render = function(ctx) {
+  ctx.save();
+  // Draw player's ship
+  ctx.translate(this.position.x, this.position.y);
+  ctx.rotate(-this.angle);
+  ctx.fillStyle = "red";
+  ctx.fillRect(0, 0, this.width, this.height);
+
+  ctx.restore();
+}
+
+},{}],6:[function(require,module,exports){
+"use strict";
+
+const Laser = require('./laser.js');
+
+const MS_PER_FRAME = 1000/8;
+
+/**
  * @module exports the Player class
  */
 module.exports = exports = Player;
@@ -223,6 +292,7 @@ module.exports = exports = Player;
  * @param {Postition} position object specifying an x and y
  */
 function Player(position, canvas) {
+  this.canvas = canvas;
   this.worldWidth = canvas.width;
   this.worldHeight = canvas.height;
   this.state = "idle";
@@ -240,6 +310,8 @@ function Player(position, canvas) {
   this.steerLeft = false;
   this.steerRight = false;
 
+  this.lasers = [];
+
   var self = this;
   window.onkeydown = function(event) {
     switch(event.key) {
@@ -255,6 +327,9 @@ function Player(position, canvas) {
       case 'd':
         self.steerRight = true;
         break;
+      case ' ':
+	self.shootLaser();
+	break;
     }
   }
 
@@ -276,7 +351,10 @@ function Player(position, canvas) {
   }
 }
 
-
+Player.prototype.shootLaser = function() {
+  console.log("pew");
+  this.lasers.push(new Laser(this, this.canvas)); 
+}
 
 /**
  * @function updates the player object
@@ -342,4 +420,4 @@ Player.prototype.render = function(time, ctx) {
   ctx.restore();
 }
 
-},{}]},{},[1]);
+},{"./laser.js":5}]},{},[1]);

@@ -15,7 +15,6 @@ var level = 0;
 var levelInit = function(level) {
   player = new Player({x: canvas.width/2, y: canvas.height/2}, canvas);
   asteroids = Asteroid.initAsteroids(10 + (level * 2), canvas);
-  console.log(asteroids);
 }
 
 /**
@@ -40,6 +39,7 @@ masterLoop(performance.now());
  */
 function update(elapsedTime) {
   player.update(elapsedTime);
+  player.lasers.forEach(function(laser){laser.update(elapsedTime)});
   asteroids.forEach(function(asteroid){asteroid.update(elapsedTime)});
 }
 
@@ -54,5 +54,7 @@ function render(elapsedTime, ctx) {
   ctx.fillStyle = "black";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   player.render(elapsedTime, ctx);
+  console.log(player.lasers);
+  player.lasers.forEach(function(laser){laser.render(ctx)});
   asteroids.forEach(function(asteroid){asteroid.render(elapsedTime, ctx)});
 }
