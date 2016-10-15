@@ -26,8 +26,7 @@ function Laser(player, canvas) {
     x: -(Math.sin(this.angle) * this.speed),
     y: -(Math.cos(this.angle) * this.speed)
   };
-  this.width = 3;
-  this.height = 10;
+  this.radius = 5;
 }
 
 /**
@@ -54,11 +53,9 @@ Laser.prototype.update = function(time) {
  */
 Laser.prototype.render = function(ctx) {
   ctx.save();
-  // Draw player's ship
-  ctx.translate(this.position.x, this.position.y);
-  ctx.rotate(-this.angle);
-  ctx.fillStyle = "red";
-  ctx.fillRect(0, 0, this.width, this.height);
-
+  ctx.strokeStyle = "red";
+  ctx.beginPath();
+  ctx.arc(this.position.x, this.position.y, this.radius, 0, 2 * Math.PI);
+  ctx.stroke();
   ctx.restore();
 }
