@@ -75,7 +75,6 @@ function Player(position, canvas) {
 }
 
 Player.prototype.shootLaser = function() {
-  console.log("pew");
   this.lasers.push(new Laser(this, this.canvas)); 
 }
 

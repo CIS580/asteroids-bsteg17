@@ -42,6 +42,7 @@ Laser.prototype.update = function(time) {
     this.position.x > this.worldWidth ||
     this.position.y < 0 ||
     this.position.y > this.worldHeight) {
+      //detete the laser
       this.player.lasers.splice(this.player.lasers.indexOf(this), 1);
   }
 }

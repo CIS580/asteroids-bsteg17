@@ -41,6 +41,8 @@ function update(elapsedTime) {
   player.update(elapsedTime);
   player.lasers.forEach(function(laser){laser.update(elapsedTime)});
   asteroids.forEach(function(asteroid){asteroid.update(elapsedTime)});
+  // collision detection
+  asteroids.forEach(function(asteroid){asteroid.collisionDetect(asteroids, player.lasers, player)});
 }
 
 /**
@@ -54,7 +56,6 @@ function render(elapsedTime, ctx) {
   ctx.fillStyle = "black";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   player.render(elapsedTime, ctx);
-  console.log(player.lasers);
   player.lasers.forEach(function(laser){laser.render(ctx)});
   asteroids.forEach(function(asteroid){asteroid.render(elapsedTime, ctx)});
 }

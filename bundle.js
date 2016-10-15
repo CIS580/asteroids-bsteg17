@@ -42,6 +42,8 @@ function update(elapsedTime) {
   player.update(elapsedTime);
   player.lasers.forEach(function(laser){laser.update(elapsedTime)});
   asteroids.forEach(function(asteroid){asteroid.update(elapsedTime)});
+  // collision detection
+  asteroids.forEach(function(asteroid){asteroid.collisionDetect(asteroids, player.lasers, player)});
 }
 
 /**
@@ -55,7 +57,6 @@ function render(elapsedTime, ctx) {
   ctx.fillStyle = "black";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   player.render(elapsedTime, ctx);
-  console.log(player.lasers);
   player.lasers.forEach(function(laser){laser.render(ctx)});
   asteroids.forEach(function(asteroid){asteroid.render(elapsedTime, ctx)});
 }
@@ -89,6 +90,52 @@ function Asteroid(canvas) {
   this.image.src = "assets/asteroid.png";
 }
 
+Asteroid.prototype.collisionDetect = function(asteroids, lasers, player) {
+  self = this;
+  self.asteroidCollisionDetect(asteroids);
+  self.laserCollisionDetect(lasers);
+  self.playerCollisionDetect(player);
+}
+
+Asteroid.prototype.asteroidCollisionDetect = function(asteroids) {
+  var self = this;
+  var ownIndex = asteroids.indexOf(self);
+  for(var i = 0; i < asteroids.length; i++) {
+    if ( i == ownIndex ) continue;
+    if ( Helpers.circlesOverlap(self, asteroids[i]) ) {
+      self.asteroidCollision();
+    }
+  }
+}
+
+Asteroid.prototype.laserCollisionDetect = function(lasers) {
+  var self = this;
+  for(var i = 0; i < lasers.length; i++) {
+    if ( Helpers.circlesOverlap(self, lasers[i]) ) {
+      self.laserCollision();
+      break;
+    }
+  }
+}
+
+Asteroid.prototype.playerCollisionDetect = function(player) {
+  var self = this;
+  if ( Helpers.circlesOverlap(self, player) ) self.playerCollision();
+}
+
+Asteroid.prototype.asteroidCollision = function() {
+   console.log("asteroid Collision"); 
+}
+
+Asteroid.prototype.laserCollision = function() {
+  console.log("laser collision");
+}
+
+Asteroid.prototype.playerCollision = function() {
+  console.log("player collision");
+}
+
+
 /**
  * @function updates the player object
  * {DOMHighResTimeStamp} time the elapsed time since the last frame
@@ -110,7 +157,6 @@ Asteroid.prototype.update = function(time) {
  * {CanvasRenderingContext2D} ctx the context to render into
  */
 Asteroid.prototype.render = function(time, ctx) {
-  console.log(this.image.naturalWidth, this.image.naturalHeight );
   ctx.drawImage(this.image, 
 		this.position.x - (this.radius), this.position.y - (this.radius), 
 		this.radius * 2, this.radius * 2);
@@ -209,6 +255,12 @@ Helpers.randomPosition = function(canvas) {
   }
 }
 
+Helpers.circlesOverlap = function(circle1, circle2) {
+  var sumOfRadii = circle1.radius + circle2.radius;
+  var distance = Math.sqrt( Math.pow(circle2.position.x - circle1.position.x, 2) + Math.pow(circle2.position.y - circle1.position.y, 2) );
+  return distance < sumOfRadii;
+}
+
 },{}],5:[function(require,module,exports){
 "use strict";
 
@@ -254,6 +306,7 @@ Laser.prototype.update = function(time) {
     this.position.x > this.worldWidth ||
     this.position.y < 0 ||
     this.position.y > this.worldHeight) {
+      //detete the laser
       this.player.lasers.splice(this.player.lasers.indexOf(this), 1);
   }
 }
@@ -352,7 +405,6 @@ function Player(position, canvas) {
 }
 
 Player.prototype.shootLaser = function() {
-  console.log("pew");
   this.lasers.push(new Laser(this, this.canvas)); 
 }
 
