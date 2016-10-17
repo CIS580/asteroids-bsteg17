@@ -39,6 +39,7 @@ masterLoop(performance.now());
  * the number of milliseconds passed since the last frame.
  */
 function update(elapsedTime) {
+  console.log(asteroids);
   player.update(elapsedTime);
   player.lasers.forEach(function(laser){laser.update(elapsedTime)});
   asteroids.forEach(function(asteroid){asteroid.update(elapsedTime)});
@@ -63,7 +64,7 @@ function render(elapsedTime, ctx) {
 
 },{"./asteroid.js":2,"./game.js":3,"./player.js":6}],2:[function(require,module,exports){
 "use strict";
-
+var canvas = document.getElementsByTagName('canvas')[0];
 var Helpers = require('./helpers.js');
 
 const MS_PER_FRAME = 1000/8;
@@ -78,13 +79,13 @@ module.exports = exports = Asteroid;
  * Creates a new player object
  * @param {Postition} position object specifying an x and y
  */
-function Asteroid(canvas) {
+function Asteroid(position, velocity, radius) {
   this.worldWidth = canvas.width;
   this.worldHeight = canvas.height;
   this.state = "idle";
-  this.position = Helpers.randomPosition(canvas);
-  this.velocity = Helpers.randomVector();
-  this.radius  = Helpers.randomRadius();
+  this.position = position; 
+  this.velocity = velocity;
+  this.radius = radius;
 
   this.image = new Image();
   this.image.src = "assets/asteroid.png";
@@ -93,7 +94,7 @@ function Asteroid(canvas) {
 Asteroid.prototype.collisionDetect = function(asteroids, lasers, player) {
   self = this;
   self.asteroidCollisionDetect(asteroids);
-  self.laserCollisionDetect(lasers);
+  self.laserCollisionDetect(asteroids, lasers);
   self.playerCollisionDetect(player);
 }
 
@@ -108,11 +109,11 @@ Asteroid.prototype.asteroidCollisionDetect = function(asteroids) {
   }
 }
 
-Asteroid.prototype.laserCollisionDetect = function(lasers) {
+Asteroid.prototype.laserCollisionDetect = function(asteroids, lasers) {
   var self = this;
   for(var i = 0; i < lasers.length; i++) {
     if ( Helpers.circlesOverlap(self, lasers[i]) ) {
-      self.laserCollision();
+      self.laserCollision(asteroids, lasers[i]);
       break;
     }
   }
@@ -124,15 +125,25 @@ Asteroid.prototype.playerCollisionDetect = function(player) {
 }
 
 Asteroid.prototype.asteroidCollision = function() {
-   console.log("asteroid Collision"); 
+  // console.log("asteroid Collision"); 
 }
 
-Asteroid.prototype.laserCollision = function() {
+Asteroid.prototype.laserCollision = function(asteroids, laser) {
   console.log("laser collision");
+  var self = this;
+  // destroy laser
+  var laserIndex = laser.player.lasers.indexOf(laser);
+  laser.player.lasers.splice(laserIndex, 1);
+  // split asteroid in two
+  var asteroidIndex = asteroids.indexOf(self);
+  asteroids.splice(asteroidIndex, 1);
+  // make two smaller asteroids
+  asteroids.push(new Asteroid(Helpers.vectorOperation(self.position, self.velocity, "plus"), Helpers.perpVector(self.velocity, "left"), self.radius / 2));
+  asteroids.push(new Asteroid(Helpers.vectorOperation(self.position, self.velocity, "minus"), Helpers.perpVector(self.velocity, "right"), self.radius / 2));
 }
 
 Asteroid.prototype.playerCollision = function() {
-  console.log("player collision");
+  // console.log("player collision");
 }
 
 
@@ -162,10 +173,10 @@ Asteroid.prototype.render = function(time, ctx) {
 		this.radius * 2, this.radius * 2);
 }
 
-Asteroid.initAsteroids = function(numAsteroids, canvas) {
+Asteroid.initAsteroids = function(numAsteroids) {
   var asteroids = [];
   for(var i = 0; i < numAsteroids; i++) {
-    asteroids.push( new Asteroid( canvas ) );
+    asteroids.push( new Asteroid( Helpers.randomPosition(canvas), Helpers.randomVector(), Helpers.randomRadius()) );
   }
   return asteroids;
 }
@@ -259,6 +270,20 @@ Helpers.circlesOverlap = function(circle1, circle2) {
   var sumOfRadii = circle1.radius + circle2.radius;
   var distance = Math.sqrt( Math.pow(circle2.position.x - circle1.position.x, 2) + Math.pow(circle2.position.y - circle1.position.y, 2) );
   return distance < sumOfRadii;
+}
+
+Helpers.perpVector = function(vector, direction) {
+  if (direction == "left") return {x: -vector.y, y: vector.x};
+  if (direction == "right") return {x: vector.y, y: -vector.x};
+}
+
+Helpers.vectorOperation = function(v1, v2, op) {
+  switch(op) {
+    case "plus":
+      return {x: v1.x + v2.x, y: v1.y + v2.y};
+    case "minus":
+      return {x: v1.x - v2.x, y: v1.y - v2.y};
+  }
 }
 
 },{}],5:[function(require,module,exports){

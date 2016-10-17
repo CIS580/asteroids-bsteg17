@@ -29,3 +29,17 @@ Helpers.circlesOverlap = function(circle1, circle2) {
   var distance = Math.sqrt( Math.pow(circle2.position.x - circle1.position.x, 2) + Math.pow(circle2.position.y - circle1.position.y, 2) );
   return distance < sumOfRadii;
 }
+
+Helpers.perpVector = function(vector, direction) {
+  if (direction == "left") return {x: -vector.y, y: vector.x};
+  if (direction == "right") return {x: vector.y, y: -vector.x};
+}
+
+Helpers.vectorOperation = function(v1, v2, op) {
+  switch(op) {
+    case "plus":
+      return {x: v1.x + v2.x, y: v1.y + v2.y};
+    case "minus":
+      return {x: v1.x - v2.x, y: v1.y - v2.y};
+  }
+}

@@ -1,5 +1,5 @@
 "use strict";
-
+var canvas = document.getElementsByTagName('canvas')[0];
 var Helpers = require('./helpers.js');
 
 const MS_PER_FRAME = 1000/8;
@@ -14,13 +14,13 @@ module.exports = exports = Asteroid;
  * Creates a new player object
  * @param {Postition} position object specifying an x and y
  */
-function Asteroid(canvas) {
+function Asteroid(position, velocity, radius) {
   this.worldWidth = canvas.width;
   this.worldHeight = canvas.height;
   this.state = "idle";
-  this.position = Helpers.randomPosition(canvas);
-  this.velocity = Helpers.randomVector();
-  this.radius  = Helpers.randomRadius();
+  this.position = position; 
+  this.velocity = velocity;
+  this.radius = radius;
 
   this.image = new Image();
   this.image.src = "assets/asteroid.png";
@@ -29,7 +29,7 @@ function Asteroid(canvas) {
 Asteroid.prototype.collisionDetect = function(asteroids, lasers, player) {
   self = this;
   self.asteroidCollisionDetect(asteroids);
-  self.laserCollisionDetect(lasers);
+  self.laserCollisionDetect(asteroids, lasers);
   self.playerCollisionDetect(player);
 }
 
@@ -44,11 +44,11 @@ Asteroid.prototype.asteroidCollisionDetect = function(asteroids) {
   }
 }
 
-Asteroid.prototype.laserCollisionDetect = function(lasers) {
+Asteroid.prototype.laserCollisionDetect = function(asteroids, lasers) {
   var self = this;
   for(var i = 0; i < lasers.length; i++) {
     if ( Helpers.circlesOverlap(self, lasers[i]) ) {
-      self.laserCollision();
+      self.laserCollision(asteroids, lasers[i]);
       break;
     }
   }
@@ -60,15 +60,25 @@ Asteroid.prototype.playerCollisionDetect = function(player) {
 }
 
 Asteroid.prototype.asteroidCollision = function() {
-   console.log("asteroid Collision"); 
+  // console.log("asteroid Collision"); 
 }
 
-Asteroid.prototype.laserCollision = function() {
+Asteroid.prototype.laserCollision = function(asteroids, laser) {
   console.log("laser collision");
+  var self = this;
+  // destroy laser
+  var laserIndex = laser.player.lasers.indexOf(laser);
+  laser.player.lasers.splice(laserIndex, 1);
+  // split asteroid in two
+  var asteroidIndex = asteroids.indexOf(self);
+  asteroids.splice(asteroidIndex, 1);
+  // make two smaller asteroids
+  asteroids.push(new Asteroid(Helpers.vectorOperation(self.position, self.velocity, "plus"), Helpers.perpVector(self.velocity, "left"), self.radius / 2));
+  asteroids.push(new Asteroid(Helpers.vectorOperation(self.position, self.velocity, "minus"), Helpers.perpVector(self.velocity, "right"), self.radius / 2));
 }
 
 Asteroid.prototype.playerCollision = function() {
-  console.log("player collision");
+  // console.log("player collision");
 }
 
 
@@ -98,10 +108,10 @@ Asteroid.prototype.render = function(time, ctx) {
 		this.radius * 2, this.radius * 2);
 }
 
-Asteroid.initAsteroids = function(numAsteroids, canvas) {
+Asteroid.initAsteroids = function(numAsteroids) {
   var asteroids = [];
   for(var i = 0; i < numAsteroids; i++) {
-    asteroids.push( new Asteroid( canvas ) );
+    asteroids.push( new Asteroid( Helpers.randomPosition(canvas), Helpers.randomVector(), Helpers.randomRadius()) );
   }
   return asteroids;
 }
