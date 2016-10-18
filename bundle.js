@@ -137,6 +137,7 @@ Asteroid.prototype.laserCollision = function(asteroids, laser) {
   // split asteroid in two
   var asteroidIndex = asteroids.indexOf(self);
   asteroids.splice(asteroidIndex, 1);
+  if (self.radius / 2 < 10) return;
   // make two smaller asteroids
   asteroids.push(new Asteroid(Helpers.vectorOperation(self.position, self.velocity, "plus"), Helpers.perpVector(self.velocity, "left"), self.radius / 2));
   asteroids.push(new Asteroid(Helpers.vectorOperation(self.position, self.velocity, "minus"), Helpers.perpVector(self.velocity, "right"), self.radius / 2));
