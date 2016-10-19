@@ -26,6 +26,8 @@ function Asteroid(position, velocity, radius) {
   this.image.src = "assets/asteroid.png";
 }
 
+Asteroid.minRadius = 20;
+
 Asteroid.prototype.collisionDetect = function(asteroids, lasers, player) {
   self = this;
   self.asteroidCollisionDetect(asteroids);
@@ -39,7 +41,7 @@ Asteroid.prototype.asteroidCollisionDetect = function(asteroids) {
   for(var i = 0; i < asteroids.length; i++) {
     if ( i == ownIndex ) continue;
     if ( Helpers.circlesOverlap(self, asteroids[i]) ) {
-      self.asteroidCollision();
+      self.asteroidCollision(asteroids[i]);
     }
   }
 }
@@ -56,11 +58,21 @@ Asteroid.prototype.laserCollisionDetect = function(asteroids, lasers) {
 
 Asteroid.prototype.playerCollisionDetect = function(player) {
   var self = this;
-  if ( Helpers.circlesOverlap(self, player) ) self.playerCollision();
+  if ( Helpers.circlesOverlap(self, player) ) self.playerCollision(player);
 }
 
-Asteroid.prototype.asteroidCollision = function() {
-  // console.log("asteroid Collision"); 
+Asteroid.prototype.asteroidCollision = function(asteroid2) {
+  var self = this;
+  console.log("asteroid collision");
+  var newVelocities = Helpers.postCollisionVectors(self, asteroid2);
+  self.velocity = newVelocities[0];
+  asteroid2.velocity = newVelocities[1];
+  self.position.x += self.velocity.x;
+  self.position.y += self.velocity.y;
+  asteroid2.position.x += asteroid2.velocity.x;
+  asteroid2.position.y += asteroid2.velocity.y;
+  var snd = new Audio("assets/collision.wav"); // buffers automatically when created
+  snd.play();
 }
 
 Asteroid.prototype.laserCollision = function(asteroids, laser) {
@@ -72,14 +84,22 @@ Asteroid.prototype.laserCollision = function(asteroids, laser) {
   // split asteroid in two
   var asteroidIndex = asteroids.indexOf(self);
   asteroids.splice(asteroidIndex, 1);
-  if (self.radius / 2 < 10) return;
+  if (self.radius / 2 < Asteroid.minRadius) return;
   // make two smaller asteroids
   asteroids.push(new Asteroid(Helpers.vectorOperation(self.position, self.velocity, "plus"), Helpers.perpVector(self.velocity, "left"), self.radius / 2));
   asteroids.push(new Asteroid(Helpers.vectorOperation(self.position, self.velocity, "minus"), Helpers.perpVector(self.velocity, "right"), self.radius / 2));
+  var snd = new Audio("assets/explosion.wav"); // buffers automatically when created
+  snd.play();
 }
 
-Asteroid.prototype.playerCollision = function() {
+Asteroid.prototype.playerCollision = function(player) {
   // console.log("player collision");
+  player.lives -= 1;
+  player.position = Helpers.randomPosition(canvas);
+  player.velocity.x = 0;
+  player.velocity.y = 0;
+  var snd = new Audio("assets/explosion.wav"); // buffers automatically when created
+  snd.play();
 }
 
 

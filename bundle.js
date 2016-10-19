@@ -5,17 +5,24 @@
 const Game = require('./game.js');
 const Player = require('./player.js');
 const Asteroid = require('./asteroid.js');
+const GUI = require('./gui.js');
 
 /* Global variables */
 var canvas = document.getElementById('screen');
+var gui = new GUI();
 var game = new Game(canvas, update, render);
 var player; 
 var asteroids = [];
 var level = 0;
+var score = 0;
 
 var levelInit = function(level) {
   player = new Player({x: canvas.width/2, y: canvas.height/2}, canvas);
   asteroids = Asteroid.initAsteroids(10 + (level * 2), canvas);
+}
+
+var gameOver = function() {
+  document.getElementsByTagName("body")[0].innerHTML = "GAME OVER";
 }
 
 /**
@@ -39,7 +46,14 @@ masterLoop(performance.now());
  * the number of milliseconds passed since the last frame.
  */
 function update(elapsedTime) {
-  console.log(asteroids);
+  if (player.lives == 0) { 
+	  document.getElementsByTagName("body")[0].innerHTML = "GAME OVER";
+	  return;
+  } 
+  if (asteroids.length == 0) { 
+    score += 100;
+    levelInit(++level); 
+  }
   player.update(elapsedTime);
   player.lasers.forEach(function(laser){laser.update(elapsedTime)});
   asteroids.forEach(function(asteroid){asteroid.update(elapsedTime)});
@@ -60,9 +74,10 @@ function render(elapsedTime, ctx) {
   player.render(elapsedTime, ctx);
   player.lasers.forEach(function(laser){laser.render(ctx)});
   asteroids.forEach(function(asteroid){asteroid.render(elapsedTime, ctx)});
+  gui.render(score, player.lives, level);
 }
 
-},{"./asteroid.js":2,"./game.js":3,"./player.js":6}],2:[function(require,module,exports){
+},{"./asteroid.js":2,"./game.js":3,"./gui.js":4,"./player.js":7}],2:[function(require,module,exports){
 "use strict";
 var canvas = document.getElementsByTagName('canvas')[0];
 var Helpers = require('./helpers.js');
@@ -91,6 +106,8 @@ function Asteroid(position, velocity, radius) {
   this.image.src = "assets/asteroid.png";
 }
 
+Asteroid.minRadius = 20;
+
 Asteroid.prototype.collisionDetect = function(asteroids, lasers, player) {
   self = this;
   self.asteroidCollisionDetect(asteroids);
@@ -104,7 +121,7 @@ Asteroid.prototype.asteroidCollisionDetect = function(asteroids) {
   for(var i = 0; i < asteroids.length; i++) {
     if ( i == ownIndex ) continue;
     if ( Helpers.circlesOverlap(self, asteroids[i]) ) {
-      self.asteroidCollision();
+      self.asteroidCollision(asteroids[i]);
     }
   }
 }
@@ -121,11 +138,21 @@ Asteroid.prototype.laserCollisionDetect = function(asteroids, lasers) {
 
 Asteroid.prototype.playerCollisionDetect = function(player) {
   var self = this;
-  if ( Helpers.circlesOverlap(self, player) ) self.playerCollision();
+  if ( Helpers.circlesOverlap(self, player) ) self.playerCollision(player);
 }
 
-Asteroid.prototype.asteroidCollision = function() {
-  // console.log("asteroid Collision"); 
+Asteroid.prototype.asteroidCollision = function(asteroid2) {
+  var self = this;
+  console.log("asteroid collision");
+  var newVelocities = Helpers.postCollisionVectors(self, asteroid2);
+  self.velocity = newVelocities[0];
+  asteroid2.velocity = newVelocities[1];
+  self.position.x += self.velocity.x;
+  self.position.y += self.velocity.y;
+  asteroid2.position.x += asteroid2.velocity.x;
+  asteroid2.position.y += asteroid2.velocity.y;
+  var snd = new Audio("assets/collision.wav"); // buffers automatically when created
+  snd.play();
 }
 
 Asteroid.prototype.laserCollision = function(asteroids, laser) {
@@ -137,14 +164,22 @@ Asteroid.prototype.laserCollision = function(asteroids, laser) {
   // split asteroid in two
   var asteroidIndex = asteroids.indexOf(self);
   asteroids.splice(asteroidIndex, 1);
-  if (self.radius / 2 < 10) return;
+  if (self.radius / 2 < Asteroid.minRadius) return;
   // make two smaller asteroids
   asteroids.push(new Asteroid(Helpers.vectorOperation(self.position, self.velocity, "plus"), Helpers.perpVector(self.velocity, "left"), self.radius / 2));
   asteroids.push(new Asteroid(Helpers.vectorOperation(self.position, self.velocity, "minus"), Helpers.perpVector(self.velocity, "right"), self.radius / 2));
+  var snd = new Audio("assets/explosion.wav"); // buffers automatically when created
+  snd.play();
 }
 
-Asteroid.prototype.playerCollision = function() {
+Asteroid.prototype.playerCollision = function(player) {
   // console.log("player collision");
+  player.lives -= 1;
+  player.position = Helpers.randomPosition(canvas);
+  player.velocity.x = 0;
+  player.velocity.y = 0;
+  var snd = new Audio("assets/explosion.wav"); // buffers automatically when created
+  snd.play();
 }
 
 
@@ -182,7 +217,7 @@ Asteroid.initAsteroids = function(numAsteroids) {
   return asteroids;
 }
 
-},{"./helpers.js":4}],3:[function(require,module,exports){
+},{"./helpers.js":5}],3:[function(require,module,exports){
 "use strict";
 
 /**
@@ -241,6 +276,40 @@ Game.prototype.loop = function(newTime) {
 }
 
 },{}],4:[function(require,module,exports){
+"use strict";
+
+const MS_PER_FRAME = 1000/8;
+
+/**
+ * @module exports the Player class
+ */
+module.exports = exports = GUI;
+
+var canvas = document.getElementById("screen");
+
+/**
+ * @constructor Player
+ * Creates a new player object
+ * @param {Postition} position object specifying an x and y
+ */
+function GUI() {};
+
+/**
+ * @function renders the player into the provided context
+ * {DOMHighResTimeStamp} time the elapsed time since the last frame
+ * {CanvasRenderingContext2D} ctx the context to render into
+ */
+GUI.prototype.render = function(score, lives, level) {
+  var ctx = canvas.getContext('2d');
+  var fontSize = 20;
+  ctx.font = fontSize+"px Arial";
+  ctx.fillStyle = "white";
+  ctx.fillText("Score: "+score, 0, fontSize);
+  ctx.fillText("Lives: "+lives, 160, fontSize);
+  ctx.fillText("Level: "+level, 240, fontSize);
+}
+
+},{}],5:[function(require,module,exports){
 module.exports = exports = Helpers;
 
 function Helpers() {};
@@ -287,7 +356,34 @@ Helpers.vectorOperation = function(v1, v2, op) {
   }
 }
 
-},{}],5:[function(require,module,exports){
+Helpers.getMagnitude = function(vector) {
+  return Math.sqrt( Math.pow(vector.x, 2) + Math.pow(vector.y, 2) );
+}
+
+Helpers.dotProduct = function(v1, v2) {
+  return v1.x * v2.x + v1.y * v2.y;
+}
+
+Helpers.getAngle = function(v1, v2) {
+  return Math.acos( Helpers.dotProduct(v1, v2) / ( Helpers.getMagnitude(v1) * Helpers.getMagnitude(v2) ) );
+}
+
+Helpers.multiplyVectorByScalar = function(vector, scalar) {
+  return {x: vector.x * scalar, y: vector.y * scalar};
+}
+
+Helpers.postCollisionVectors = function(a, b) {
+  var newA, newB;
+  newA = {x:0, y:0};
+  newB = {x:0, y:0};
+  newA.x = (a.velocity.x * (a.radius - b.radius) + (2 * b.radius * b.velocity.x)) / (a.radius + b.radius);
+  newA.y = (a.velocity.y * (a.radius - b.radius) + (2 * b.radius * b.velocity.y)) / (a.radius + b.radius);
+  newB.x = (b.velocity.x * (b.radius - a.radius) + (2 * a.radius * a.velocity.x)) / (a.radius + b.radius);
+  newB.y = (b.velocity.y * (b.radius - a.radius) + (2 * a.radius * a.velocity.y)) / (a.radius + b.radius);
+  return [newA, newB];
+}
+
+},{}],6:[function(require,module,exports){
 "use strict";
 
 const MS_PER_FRAME = 1000/8;
@@ -350,7 +446,7 @@ Laser.prototype.render = function(ctx) {
   ctx.restore();
 }
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 "use strict";
 
 const Laser = require('./laser.js');
@@ -381,12 +477,14 @@ function Player(position, canvas) {
     y: 0
   }
   this.angle = 0;
-  this.radius  = 64;
+  this.radius  = 20;
   this.thrusting = false;
   this.steerLeft = false;
   this.steerRight = false;
 
   this.lasers = [];
+
+  this.lives = 3;
 
   var self = this;
   window.onkeydown = function(event) {
@@ -429,6 +527,8 @@ function Player(position, canvas) {
 
 Player.prototype.shootLaser = function() {
   this.lasers.push(new Laser(this, this.canvas)); 
+  var snd = new Audio("assets/laser.wav"); // buffers automatically when created
+  snd.play();
 }
 
 /**
@@ -495,4 +595,4 @@ Player.prototype.render = function(time, ctx) {
   ctx.restore();
 }
 
-},{"./laser.js":5}]},{},[1]);
+},{"./laser.js":6}]},{},[1]);

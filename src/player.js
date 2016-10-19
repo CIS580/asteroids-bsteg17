@@ -28,12 +28,14 @@ function Player(position, canvas) {
     y: 0
   }
   this.angle = 0;
-  this.radius  = 64;
+  this.radius  = 20;
   this.thrusting = false;
   this.steerLeft = false;
   this.steerRight = false;
 
   this.lasers = [];
+
+  this.lives = 3;
 
   var self = this;
   window.onkeydown = function(event) {
@@ -76,6 +78,8 @@ function Player(position, canvas) {
 
 Player.prototype.shootLaser = function() {
   this.lasers.push(new Laser(this, this.canvas)); 
+  var snd = new Audio("assets/laser.wav"); // buffers automatically when created
+  snd.play();
 }
 
 /**

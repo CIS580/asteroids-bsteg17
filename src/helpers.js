@@ -43,3 +43,30 @@ Helpers.vectorOperation = function(v1, v2, op) {
       return {x: v1.x - v2.x, y: v1.y - v2.y};
   }
 }
+
+Helpers.getMagnitude = function(vector) {
+  return Math.sqrt( Math.pow(vector.x, 2) + Math.pow(vector.y, 2) );
+}
+
+Helpers.dotProduct = function(v1, v2) {
+  return v1.x * v2.x + v1.y * v2.y;
+}
+
+Helpers.getAngle = function(v1, v2) {
+  return Math.acos( Helpers.dotProduct(v1, v2) / ( Helpers.getMagnitude(v1) * Helpers.getMagnitude(v2) ) );
+}
+
+Helpers.multiplyVectorByScalar = function(vector, scalar) {
+  return {x: vector.x * scalar, y: vector.y * scalar};
+}
+
+Helpers.postCollisionVectors = function(a, b) {
+  var newA, newB;
+  newA = {x:0, y:0};
+  newB = {x:0, y:0};
+  newA.x = (a.velocity.x * (a.radius - b.radius) + (2 * b.radius * b.velocity.x)) / (a.radius + b.radius);
+  newA.y = (a.velocity.y * (a.radius - b.radius) + (2 * b.radius * b.velocity.y)) / (a.radius + b.radius);
+  newB.x = (b.velocity.x * (b.radius - a.radius) + (2 * a.radius * a.velocity.x)) / (a.radius + b.radius);
+  newB.y = (b.velocity.y * (b.radius - a.radius) + (2 * a.radius * a.velocity.y)) / (a.radius + b.radius);
+  return [newA, newB];
+}
